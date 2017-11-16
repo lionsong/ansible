@@ -1,0 +1,42 @@
+---
+- hosts: "{{hosts}}"
+  remote_user: nur
+  sudo: yes
+  tasks: 
+  - name: Mkdir /var/log/zabbix/
+    shell: mkdir /var/log/zabbix -p
+
+  - name: Install for Centos7 (nc nload lrzsz )
+    yum: name={{item}} state=present
+    when: ansible_os_family == "RedHat" and ansible_distribution_version == "7"
+    with_items:
+        - nc
+        - nload
+        - lrzsz
+
+  - name: copy file (zabbix-agnet established.sh)
+    copy: src=/opt/shell/{{item}} dest=/opt/shell/{{item}} owner=root group=root mode=0755 backup=yes
+    with_items:
+        - new-zabbix-agentd.bin
+        - establish.sh
+        - init.sh
+        - init.py
+        - zabbix.sh
+    notify:
+        - exec new-zabbix-agentd.bin
+        - exec init.sh
+        - exec establish.sh
+        - exec init.py
+
+  - name: crontab task (TCP status get)
+    cron: name="ESTABLISHED" minute="2" job="/opt/shell/establish.sh"
+    
+  handlers:
+    - name: exec new-zabbix-agentd.bin
+      script: /opt/shell/new-zabbix-agentd.bin
+    - name: exec init.sh
+      script: /opt/shell/init.sh
+    - name: exec init.py
+      script: /opt/shell/init.py
+    - name: exec establish.sh
+      script: /opt/shell/establish.sh

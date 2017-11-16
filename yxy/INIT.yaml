@@ -1,0 +1,30 @@
+---
+- hosts: "{{hosts}}"
+  remote_user: nur
+  sudo: yes
+  tasks: 
+  - name: Mkdir /var/log/zabbix/
+    shell: mkdir /var/log/zabbix -p
+
+  - name: Mkdir /opt/shell
+    shell: mkdir /opt/shell -p
+
+  - name: Install for Centos7 (nc nload lrzsz )
+    yum: name={{item}} state=present
+    when: ansible_os_family == "RedHat" and ansible_distribution_version == "7"
+    with_items:
+        - nc
+        - nload
+        - lrzsz
+
+  - name: copy file (zabbix-agnet established.sh)
+    copy: src=/opt/python/{{item}} dest=/opt/shell/{{item}} owner=root group=root mode=0755 backup=yes
+    with_items:
+        - init.py
+        - zabbix.sh
+    notify:
+        - exec init.py
+
+  handlers:
+    - name: exec init.py
+      script: /opt/shell/init.py

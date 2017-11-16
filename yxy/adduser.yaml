@@ -1,0 +1,13 @@
+---
+- hosts: "{{hosts}}"
+  remote_user: nur
+  sudo: yes
+  tasks:
+  - name: 添加新用户(useradd users)
+    user: name={{user}} shell=/bin/bash  append=yes
+  - name: add authorized_key
+    authorized_key: user={{user}} key="{{lookup('file', '/keys/id_rsa.pub')}}"
+  - name: add sudoer
+    lineinfile: "dest=/etc/sudoers state=present insertafter='^root' line='{{user}} ALL=(ALL) NOPASSWD: ALL'"
+    tags:
+      - sudo
