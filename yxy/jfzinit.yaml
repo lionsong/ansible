@@ -1,0 +1,29 @@
+---
+- hosts: "{{hosts}}"
+  remote_user: root
+  sudo: yes
+#  vars:
+#  - collect_gate: "{{ansible_default_ipv4['gateway']}}"
+  tasks:
+  - name: copy file (init.py clientuser.sh)
+    copy: src=/opt/python/yaml/{{item}} dest=/opt/ owner=root group=root mode=0755 backup=yes
+    with_items:
+    - init.py
+    - clientuser.sh
+  - name: parted /dev/vdb
+    shell: "{{item}}"
+    with_items:
+    - parted -s /dev/vdb mklabel gpt
+    - parted -s /dev/vdb mkpart primary xfs 1 100%
+  - name: 格式化系统
+    filesystem: fstype=xfs dev=/dev/vdb1
+  - name: mount disk from /dev/vdb1
+    shell: "{{item}}"
+    with_items:
+    - mkdir /data
+    - mount /dev/vdb1 /data
+  - name: 初始化系统
+    shell: "{{item}}"
+    with_items:
+    - /opt/init.py
+    - /opt/clientuser.sh songliguo sudo
